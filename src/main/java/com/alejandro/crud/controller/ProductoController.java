@@ -1,16 +1,14 @@
 package com.alejandro.crud.controller;
 
 
-import com.alejandro.crud.dto.Mensaje;
-import com.alejandro.crud.dto.ProductoDto;
+
 import com.alejandro.crud.entity.Producto;
 import com.alejandro.crud.service.ProductoService;
 import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
@@ -22,65 +20,101 @@ public class ProductoController {
     ProductoService productoService;
 
     @GetMapping("/lista")
-    public ResponseEntity<List<Producto>> list(){
-        List<Producto> list = productoService.list();
-        return new ResponseEntity(list, HttpStatus.OK);
+    public ModelAndView list(){
+       ModelAndView mv = new ModelAndView();
+       mv.setViewName("/producto/lista");
+       List<Producto> productoList = productoService.list();
+       mv.addObject("productos",productoList);
+       return  mv;
     }
 
-    @GetMapping("/detail/{id}")
-    public ResponseEntity<Producto> getById(@PathVariable("id") int id){
-        if(!productoService.existsById(id))
-            return new ResponseEntity(new Mensaje("no existe"), HttpStatus.NOT_FOUND);
-        Producto producto = productoService.getOne(id).get();
-        return new ResponseEntity(producto, HttpStatus.OK);
+    @GetMapping("nuevo")
+    public String nuevo(){
+        return "/producto/nuevo";
     }
 
-    @GetMapping("/detailname/{nombre}")
-    public ResponseEntity<Producto> getByNombre(@PathVariable("nombre") String nombre){
-        if(!productoService.existsByNombre(nombre))
-            return new ResponseEntity(new Mensaje("no existe"), HttpStatus.NOT_FOUND);
-        Producto producto = productoService.getByNombre(nombre).get();
-        return new ResponseEntity(producto, HttpStatus.OK);
-    }
-
-    @PostMapping("/create")
-    public ResponseEntity<?> create(@RequestBody ProductoDto productoDto){
-        if(StringUtils.isBlank(productoDto.getNombre()))
-            return new ResponseEntity(new Mensaje("el nombre es obligatorio"), HttpStatus.BAD_REQUEST);
-        if(productoDto.getPrecio()==null || productoDto.getPrecio()<0 )
-            return new ResponseEntity(new Mensaje("el precio debe ser mayor que 0"), HttpStatus.BAD_REQUEST);
-        if(productoService.existsByNombre(productoDto.getNombre()))
-            return new ResponseEntity(new Mensaje("ese nombre ya existe"), HttpStatus.BAD_REQUEST);
-        Producto producto = new Producto(productoDto.getNombre(), productoDto.getPrecio());
+    @PostMapping("/guardar")
+    public ModelAndView crear(@RequestParam String nombre, @RequestParam float precio){
+        ModelAndView mv = new ModelAndView();
+        if(StringUtils.isBlank(nombre)){
+            mv.setViewName("/producto/nuevo");
+            mv.addObject("error", "el nombre no puede estar vacío");
+            return mv;
+        }
+        if(precio <1 ){
+            mv.setViewName("/producto/nuevo");
+            mv.addObject("error", "el precio debe ser mayor que cero");
+            return mv;
+        }
+        if(productoService.existsByNombre(nombre)){
+            mv.setViewName("/producto/nuevo");
+            mv.addObject("error", "ese nombre ya existe");
+            return mv;
+        }
+        Producto producto = new Producto(nombre, precio);
         productoService.save(producto);
-        return new ResponseEntity(new Mensaje("producto creado"), HttpStatus.OK);
+        mv.setViewName("redirect:/producto/lista");
+        return mv;
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseEntity<?> update(@PathVariable("id")int id, @RequestBody ProductoDto productoDto){
+    @GetMapping("/detalle/{id}")
+    public ModelAndView detalle(@PathVariable("id") int id){
         if(!productoService.existsById(id))
-            return new ResponseEntity(new Mensaje("no existe"), HttpStatus.NOT_FOUND);
-        if(productoService.existsByNombre(productoDto.getNombre()) && productoService.getByNombre(productoDto.getNombre()).get().getId() != id)
-            return new ResponseEntity(new Mensaje("ese nombre ya existe"), HttpStatus.BAD_REQUEST);
-        if(StringUtils.isBlank(productoDto.getNombre()))
-            return new ResponseEntity(new Mensaje("el nombre es obligatorio"), HttpStatus.BAD_REQUEST);
-        if(productoDto.getPrecio()==null || productoDto.getPrecio()<0 )
-            return new ResponseEntity(new Mensaje("el precio debe ser mayor que 0"), HttpStatus.BAD_REQUEST);
-
+            return new ModelAndView("redirect:/producto/lista");
         Producto producto = productoService.getOne(id).get();
-        producto.setNombre(productoDto.getNombre());
-        producto.setPrecio(productoDto.getPrecio());
-        productoService.save(producto);
-        return new ResponseEntity(new Mensaje("producto actualizado"), HttpStatus.OK);
+        ModelAndView mv = new ModelAndView("/producto/detalle");
+        mv.addObject("producto", producto);
+        return mv;
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id")int id){
+    @GetMapping("/editar/{id}")
+    public ModelAndView editar(@PathVariable("id") int id){
         if(!productoService.existsById(id))
-            return new ResponseEntity(new Mensaje("no existe"), HttpStatus.NOT_FOUND);
-        productoService.delete(id);
-        return new ResponseEntity(new Mensaje("producto eliminado"), HttpStatus.OK);
+            return new ModelAndView("redirect:/producto/lista");
+        Producto producto = productoService.getOne(id).get();
+        ModelAndView mv = new ModelAndView("/producto/editar");
+        mv.addObject("producto", producto);
+        return mv;
     }
 
+    @PostMapping("/actualizar")
+    public ModelAndView actualizar(@RequestParam int id, @RequestParam String nombre, @RequestParam float precio){
+        if(!productoService.existsById(id))
+            return new ModelAndView("redirect:/producto/lista");
+        ModelAndView mv = new ModelAndView();
+        Producto producto = productoService.getOne(id).get();
+        if(StringUtils.isBlank(nombre)){
+            mv.setViewName("producto/editar");
+            mv.addObject("producto", producto);
+            mv.addObject("error", "el nombre no puede estar vacío");
+            return mv;
+        }
+        if(precio <1 ){
+            mv.setViewName("producto/editar");
+            mv.addObject("error", "el precio debe ser mayor que cero");
+            mv.addObject("producto", producto);
+            return mv;
+        }
+        if(productoService.existsByNombre(nombre) && productoService.getByNombre(nombre).get().getId() != id){
+            mv.setViewName("producto/editar");
+            mv.addObject("error", "ese nombre ya existe");
+            mv.addObject("producto", producto);
+            return mv;
+        }
+
+        producto.setNombre(nombre);
+        producto.setPrecio(precio);
+        productoService.save(producto);
+        return new ModelAndView("redirect:/producto/lista");
+    }
+
+    @GetMapping("/borrar/{id}")
+    public ModelAndView borrar(@PathVariable("id")int id){
+        if(productoService.existsById(id)){
+            productoService.delete(id);
+            return new ModelAndView("redirect:/producto/lista");
+        }
+        return null;
+    }
 
 }
