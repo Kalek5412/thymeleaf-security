@@ -40,7 +40,7 @@
                 </div>
             </form>
 
-            <p sec:authorize="isAuthenticated()">Ya has iniciado sesión, lo que implica que ya tienes cuenta</p>
+            <p>Ya has iniciado sesión, lo que implica que ya tienes cuenta</p>
 
             <div th:if="${error}" class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
                 <p th:text="${error}"></p>
