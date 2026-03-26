@@ -1,4 +1,4 @@
-package com.alejandro.crud.entity;
+package com.alejandro.crud.security.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

@@ -1,6 +1,6 @@
-package com.alejandro.crud.entity;
+package com.alejandro.crud.security.entity;
 
-import com.alejandro.crud.enums.RolNombre;
+import com.alejandro.crud.security.enums.RolNombre;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
