@@ -6,6 +6,7 @@ import com.alejandro.crud.entity.Producto;
 import com.alejandro.crud.service.ProductoService;
 import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -28,11 +29,13 @@ public class ProductoController {
        return  mv;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("nuevo")
     public String nuevo(){
         return "/producto/nuevo";
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/guardar")
     public ModelAndView crear(@RequestParam String nombre, @RequestParam float precio){
         ModelAndView mv = new ModelAndView();
@@ -67,6 +70,7 @@ public class ProductoController {
         return mv;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/editar/{id}")
     public ModelAndView editar(@PathVariable("id") int id){
         if(!productoService.existsById(id))
@@ -77,6 +81,7 @@ public class ProductoController {
         return mv;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/actualizar")
     public ModelAndView actualizar(@RequestParam int id, @RequestParam String nombre, @RequestParam float precio){
         if(!productoService.existsById(id))
@@ -108,6 +113,7 @@ public class ProductoController {
         return new ModelAndView("redirect:/producto/lista");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/borrar/{id}")
     public ModelAndView borrar(@PathVariable("id")int id){
         if(productoService.existsById(id)){
